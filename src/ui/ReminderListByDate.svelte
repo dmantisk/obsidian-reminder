@@ -9,8 +9,16 @@
   export let timeToString = (time: DateTime) => time.format("HH:mm");
   export let generateLink: (reminder: Reminder) => string = () => "";
 
+  function displayTitle(reminder: Reminder): string {
+    return reminder.source === "tasknotes"
+      ? reminder.tasknotes?.taskTitle || reminder.getFileName()
+      : reminder.title;
+  }
+
   function tooltip(reminder: Reminder): string {
-    return `[${reminder.time.toString()}] ${reminder.title} - ${reminder.getFileName()}`;
+    const source =
+      reminder.source === "tasknotes" ? `${t("TaskNotes")} - ` : "";
+    return `[${reminder.effectiveTime.toString()}] ${displayTitle(reminder)} - ${source}${reminder.getFileName()}`;
   }
 </script>
 
@@ -38,15 +46,27 @@
           }}
         >
           <span class="reminder-time">
-            {timeToString(reminder.time)}
+            {timeToString(reminder.effectiveTime)}
           </span>
           <div class="reminder-title-container">
+            {#if reminder.source === "tasknotes"}
+              <span
+                class="reminder-source"
+                aria-hidden="true"
+                title={t("TaskNotes")}>TN</span
+              >
+            {/if}
             <span class="reminder-title">
-              <Markdown markdown={reminder.title} sourcePath={reminder.file} />
+              <Markdown
+                markdown={displayTitle(reminder)}
+                sourcePath={reminder.file}
+              />
             </span>
-            <span class="reminder-file">
-              {reminder.getFileName()}
-            </span>
+            {#if reminder.source === "markdown"}
+              <span class="reminder-file">
+                {reminder.getFileName()}
+              </span>
+            {/if}
           </div>
         </button>
       {/each}
@@ -96,6 +116,17 @@
     white-space: nowrap;
     flex-grow: 1;
     text-align: left;
+  }
+  .reminder-source {
+    flex-shrink: 0;
+    color: var(--interactive-accent);
+    border: 1px solid var(--interactive-accent);
+    border-radius: 999px;
+    font-size: 0.65em;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-right: 0.35rem;
+    padding: 0 0.3em;
   }
   .reminder-file {
     overflow: hidden;

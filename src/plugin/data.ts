@@ -1,5 +1,6 @@
 import { Reference } from "model/ref";
 import { Reminder, Reminders } from "model/reminder";
+import type { TaskNotesReminderStateMap } from "model/tasknotes/state";
 import { DateTime } from "model/time";
 import { Settings, TAG_RESCAN } from "plugin/settings";
 import type { SettingModel } from "plugin/settings/helper";
@@ -29,8 +30,8 @@ export class PluginData {
    * Resolves once the first `load()` has finished (or failed). Anything that
    * reparses the whole vault has to wait for this, because scanning before
    * the persisted settings and reminders are restored produces reminders
-   * parsed with default settings — and `Reminders.replaceFile()` would then
-   * carry the restored mute flags over onto them.
+   * parsed with default settings — and `Reminders.replaceSourceFile()` would
+   * then carry the restored mute flags over onto them.
    */
   readonly loaded: Promise<void> = new Promise<void>((resolve) => {
     this.resolveLoaded = resolve;
@@ -42,6 +43,7 @@ export class PluginData {
   // merely re-read. See `updateSeededTaskStatuses`.
   private seededTaskStatusesText = "";
   public debug: Reference<boolean> = new Reference(false);
+  public taskNotesReminderState: TaskNotesReminderStateMap = {};
   // Do-not-disturb end time, or `null` while do-not-disturb is inactive.
   // Transient state (not a setting): not exposed in the settings tab, but
   // still persisted so a pause survives an Obsidian restart.
@@ -117,6 +119,7 @@ export class PluginData {
           dndUntil?: number | null;
           settings?: Record<string, unknown>;
           reminders?: Record<string, Array<ReminderData>>;
+          taskNotesReminderState?: TaskNotesReminderStateMap;
         }
       | undefined;
     if (!data) {
@@ -124,6 +127,7 @@ export class PluginData {
       return;
     }
     this.scanned.value = data.scanned;
+    this.taskNotesReminderState = data.taskNotesReminderState ?? {};
     this.seededTaskStatusesText = data.seededTaskStatuses ?? "";
     if (data.debug != null) {
       this.debug.value = data.debug;
@@ -137,8 +141,8 @@ export class PluginData {
 
     // Settings are restored just above, so the toggle already holds the
     // persisted value here. Dropping the mute flags at restore time (rather
-    // than unmuting later) means a subsequent `Reminders.replaceFile()` has
-    // nothing to carry over.
+    // than unmuting later) means a subsequent `Reminders.replaceSourceFile()`
+    // has nothing to carry over.
     const restoreMuted = !this.settings.reNotifyMutedOnStartup.value;
 
     const remindersData = data.reminders;
@@ -148,8 +152,9 @@ export class PluginData {
         if (!remindersInFile) {
           return;
         }
-        this.reminders.replaceFile(
+        this.reminders.replaceSourceFile(
           filePath,
+          "markdown",
           remindersInFile.map((d) => {
             const reminder = new Reminder(
               filePath,
@@ -181,7 +186,13 @@ export class PluginData {
     );
     const remindersData: Record<string, Array<ReminderData>> = {};
     this.reminders.fileToReminders.forEach((r, filePath) => {
-      remindersData[filePath] = r.map((rr) => ({
+      const markdownReminders = r.filter(
+        (reminder) => reminder.source === "markdown",
+      );
+      if (markdownReminders.length === 0) {
+        return;
+      }
+      remindersData[filePath] = markdownReminders.map((rr) => ({
         title: rr.title,
         time: rr.time.toString(),
         rowNumber: rr.rowNumber,
@@ -196,6 +207,7 @@ export class PluginData {
       scanned: this.scanned.value,
       seededTaskStatuses: this.seededTaskStatusesText,
       reminders: remindersData,
+      taskNotesReminderState: this.taskNotesReminderState,
       debug: this.debug.value,
       dndUntil: this.dndUntil.value?.getTimeInMillis() ?? null,
       settings,
