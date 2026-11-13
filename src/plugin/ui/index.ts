@@ -4,12 +4,10 @@ import type { ReadOnlyReference } from "model/ref";
 import type { Reminder } from "model/reminder";
 import type { DateTime } from "model/time";
 import {
-  App,
   Editor,
   MarkdownView,
   Notice,
   Platform,
-  PluginSettingTab,
   TFile,
   WorkspaceLeaf,
 } from "obsidian";
@@ -43,8 +41,6 @@ export class ReminderPluginUI {
   private viewProxy: ReminderListItemViewProxy;
   private dndStatusBar: DndStatusBar;
   private overdueStatusBar: OverdueStatusBar;
-  // Kept so a language change can re-render the open settings tab.
-  private settingTab?: ReminderSettingTab;
   constructor(private plugin: ReminderPlugin) {
     this.viewProxy = new ReminderListItemViewProxy(
       this.plugin,
@@ -93,9 +89,6 @@ export class ReminderPluginUI {
     this.plugin.registerView(VIEW_TYPE_REMINDER_LIST, (leaf: WorkspaceLeaf) => {
       return this.viewProxy.createView(leaf);
     });
-    this.plugin.addSettingTab(
-      (this.settingTab = new ReminderSettingTab(this.plugin.app, this.plugin)),
-    );
     // Every label this plugin renders is translated when it is rendered, so a
     // language change has to re-render the surfaces that are already on
     // screen. Open popups/modals are short-lived and pick the new language up
@@ -176,19 +169,8 @@ export class ReminderPluginUI {
    */
   private onLanguageChanged(): void {
     refreshCommandNames(this.plugin);
-    if (this.settingTab?.containerEl.isConnected) {
-      // Deferred: this runs from inside the language dropdown's own change
-      // handler, and re-rendering the tab synchronously would tear down the
-      // element that is still dispatching the event.
-      //
-      // `display()` is avoided (deprecated since 1.13); re-rendering the
-      // plugin's own tab model is exactly what it did.
-      window.setTimeout(() => {
-        if (this.settingTab?.containerEl.isConnected) {
-          this.plugin.settings.settings.displayOn(this.settingTab.containerEl);
-        }
-      }, 0);
-    }
+    // The new native settings tab will be re-rendered by Obsidian automatically
+    // when the language changes, since it uses the plugin's settings directly.
     this.overdueStatusBar.refresh();
     this.dndStatusBar.refresh();
     if (Platform.isDesktopApp) {
@@ -481,21 +463,6 @@ class EditDetector {
     const elapsedSec =
       (new Date().getTime() - this.lastModified.getTime()) / 1000;
     return elapsedSec < this.editDetectionSec.value;
-  }
-}
-
-export class ReminderSettingTab extends PluginSettingTab {
-  constructor(
-    app: App,
-    private plugin: ReminderPlugin,
-  ) {
-    super(app, plugin);
-  }
-
-  override display(): void {
-    const { containerEl } = this;
-
-    this.plugin.settings.settings.displayOn(containerEl);
   }
 }
 

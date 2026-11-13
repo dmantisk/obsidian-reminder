@@ -15,6 +15,7 @@ import { formatStatusSetting } from "model/format/status";
 import type { TaskStatus } from "model/format/status";
 import { App, Notice, Plugin, requestUrl } from "obsidian";
 import type { PluginManifest } from "obsidian";
+import { ReminderSettingTab } from "plugin/settings/setting-tab";
 
 export default class ReminderPlugin extends Plugin {
   _data: PluginData;
@@ -142,6 +143,9 @@ export default class ReminderPlugin extends Plugin {
 
   override async onload() {
     this.ui.onload();
+    // Register the new native settings tab
+    this.addSettingTab(new ReminderSettingTab(this.app, this.settings));
+
     this.app.workspace.onLayoutReady(async () => {
       await this.data.load();
       // A fresh install has nothing persisted for the "Language" setting, so

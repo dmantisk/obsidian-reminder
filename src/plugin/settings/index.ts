@@ -46,6 +46,7 @@ export class Settings {
   editor: EditorSettings;
   display: DisplaySettings;
   advanced: AdvancedSettings;
+  reminderFormatSettings: ReminderFormatSettings;
 
   // Delegate properties for backward compatibility
   get dateFormat() {
@@ -114,6 +115,7 @@ export class Settings {
 
   constructor() {
     const reminderFormatSettings = new ReminderFormatSettings(this.settings);
+    this.reminderFormatSettings = reminderFormatSettings;
 
     this.notifications = new NotificationsSettings(this.settings);
     this.taskNotes = new TaskNotesSettings(this.settings);

@@ -27,11 +27,7 @@ export class EditorSettings {
 
   constructor(
     private settings: SettingTabModel,
-    private reminderFormatSettings: {
-      enableReminderPluginReminderFormat: SettingModel<boolean, boolean>;
-      enableTasksPluginReminderFormat: SettingModel<boolean, boolean>;
-      enableDataviewReminderFormat: SettingModel<boolean, boolean>;
-    },
+    private reminderFormatSettings: ReminderFormatSettings,
   ) {
     this.autoCompleteTrigger = this.settings
       .newSettingBuilder()
