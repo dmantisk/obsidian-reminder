@@ -66,9 +66,11 @@ export class ReminderPluginUI {
       plugin.settings.notifications.reminderTimeStep,
       plugin.settings.editor.primaryFormat,
       plugin.settings.editor.convertNonTaskLines,
-      plugin.settings.weekStart,
+      plugin.settings.display.weekStart,
     );
-    this.editDetector = new EditDetector(plugin.settings.editDetectionSec);
+    this.editDetector = new EditDetector(
+      plugin.settings.advanced.editDetectionSec,
+    );
     this.reminderNotifier = new ReminderNotifier(
       plugin.app,
       plugin.settings.notifications.useSystemNotification,
@@ -137,10 +139,12 @@ export class ReminderPluginUI {
       // The post-processor's pills live in widgets Obsidian owns, which keep
       // their DOM until the view is recreated — `updateOptions()` alone would
       // leave callouts showing the old state until the note is reopened.
-      this.plugin.settings.editorReminderDisplay.rawValue.onChanged(() => {
-        this.plugin.app.workspace.updateOptions();
-        rebuildMarkdownViews(this.plugin.app);
-      });
+      this.plugin.settings.editor.editorReminderDisplay.rawValue.onChanged(
+        () => {
+          this.plugin.app.workspace.updateOptions();
+          rebuildMarkdownViews(this.plugin.app);
+        },
+      );
     }
 
     registerCommands(this.plugin);

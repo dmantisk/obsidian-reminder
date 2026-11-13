@@ -61,12 +61,12 @@ export class DndStatusBar {
   }
 
   private formatUntil(dndUntil: DateTime): string {
-    const timeFormat = this.plugin.settings.timeDisplayFormat.value;
+    const timeFormat = this.plugin.settings.display.timeDisplayFormat.value;
     const time = dndUntil.formatForDisplay(timeFormat);
     if (dndUntil.toYYYYMMDD() === DateTime.now().toYYYYMMDD()) {
       return time;
     }
-    const dateFormat = this.plugin.settings.monthDayDisplayFormat.value;
+    const dateFormat = this.plugin.settings.display.monthDayDisplayFormat.value;
     return `${dndUntil.formatForDisplay(dateFormat)} ${time}`;
   }
 }

@@ -104,7 +104,7 @@ export async function openChooserAndApplyEdit(
     plugin.app,
     plugin.reminders,
     plugin.settings.notifications.reminderTimeStep.value,
-    Number(plugin.settings.weekStart.value),
+    Number(plugin.settings.display.weekStart.value),
     initial.span.reminder.time,
   );
 

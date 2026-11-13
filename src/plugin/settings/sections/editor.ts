@@ -151,7 +151,7 @@ export class EditorSettings {
       .key("useCustomEmojiForTasksPlugin")
       .name("Distinguish between reminder date and due date")
       .desc(
-        "Use custom emoji ⏰ instead of 📍 and distinguish between reminder date/time and Tasks Plugin's due date.",
+        "Use custom emoji ⏰ instead of 📅 and distinguish between reminder date/time and Tasks Plugin's due date.",
       )
       .tag("re-scan")
       .toggle(false)
@@ -166,7 +166,7 @@ export class EditorSettings {
       .key("useReminderTimeFallbackForTasksPlugin")
       .name("Fall back to due, scheduled, or start date")
       .desc(
-        "When the reminder date (⏰) is missing, use the due date (📍), then the scheduled date (⏳), then the start date (🛂), in that order.",
+        "When the reminder date (⏰) is missing, use the due date (📅), then the scheduled date (⏳), then the start date (🛫), in that order.",
       )
       .tag("re-scan")
       .toggle(false)

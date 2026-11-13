@@ -101,7 +101,7 @@ export class NtfyController {
   /**
    * Cancels any pending debounced sync. `registerInterval` (used by
    * `start()`) is cleaned up automatically on plugin unload, but a
-   * `window.setTimeout` from `notifyRemindersChanged()` is not â€” without
+   * `window.setTimeout` from `notifyRemindersChanged()` is not — without
    * this, a debounced sync could still fire (and make a network request)
    * right after the plugin is disabled. Call this from the plugin's
    * `onunload()`.
@@ -163,7 +163,7 @@ export class NtfyController {
    * Notices. An authentication failure is the one case that doesn't fit that
    * reasoning: it's a configuration error that will keep failing every 30
    * minutes until the user changes a setting, and the console is effectively
-   * unreachable on mobile â€” the platform this whole feature exists for. So
+   * unreachable on mobile — the platform this whole feature exists for. So
    * it's surfaced, but only once per configuration (see
    * `notifySettingsChanged()`), which is enough to make a silent failure
    * visible without nagging.
@@ -216,7 +216,7 @@ export class NtfyController {
    * schedules registered under a previous topic name are not cleaned up.
    *
    * Deliberately only deletes *pending* schedules, not already-*delivered*
-   * ones (unlike `doSync()`'s regular sync, which deletes both â€” see
+   * ones (unlike `doSync()`'s regular sync, which deletes both — see
    * `computeNtfySyncPlan()`). A pending schedule represents a notification
    * that hasn't fired yet; deleting it prevents a real future action (an
    * unwanted push notification) from happening at all, which is squarely
@@ -224,7 +224,7 @@ export class NtfyController {
    * message has already done its job on every subscribed device. Deleting
    * it now would retroactively cancel a notification the user has already
    * seen, purely because of a local, per-device settings change that has
-   * nothing to do with whether the underlying reminder is still relevant â€”
+   * nothing to do with whether the underlying reminder is still relevant —
    * the same reasoning that keeps muting a reminder from propagating to
    * ntfy (see `NtfyControllerDeps`/`doSync()` callers): a device-local
    * action shouldn't ripple into canceling notifications elsewhere unless
@@ -339,8 +339,8 @@ export class NtfyController {
    *   absent) and a `time` field: unix seconds, matching the `delay` we
    *   sent.
    * - This endpoint keeps returning `"message"` entries whose delivery time
-   *   has already passed â€” they're not purged from the poll cache the
-   *   moment they fire â€” for as long as ntfy's message cache retains them
+   *   has already passed — they're not purged from the poll cache the
+   *   moment they fire — for as long as ntfy's message cache retains them
    *   (12h by default on ntfy.sh). This is what makes deleting an
    *   already-fired message possible at all: `DELETE
    *   /<topic>/<sequence_id>` on one of these entries returns HTTP 200 and
@@ -373,7 +373,7 @@ export class NtfyController {
       // then read that as "the server has nothing pending/delivered" and
       // (re-)publish every reminder in the 24h window at once. A transient
       // failure (a 5xx, or the very first request after coming back online)
-      // would otherwise turn into a burst of publish requests â€” bad for
+      // would otherwise turn into a burst of publish requests — bad for
       // ntfy's rate limits. Throwing here lets `doSync()`'s catch block
       // abandon this whole round instead; it's retried on the next
       // debounce/interval tick.
@@ -434,7 +434,7 @@ export class NtfyController {
    *   endpoint converges to only the latest one). So `X-Sequence-ID` is
    *   still sent as a header, while everything else moves into the JSON
    *   body.
-   * - The JSON body's `at` field is *not* honored as a delay â€” a message
+   * - The JSON body's `at` field is *not* honored as a delay — a message
    *   sent with `at` set to a future unix timestamp was delivered
    *   immediately. `delay` is what actually schedules it, and it accepts
    *   the same unix-seconds value (as a JSON string; a bare JSON number is
@@ -481,7 +481,7 @@ export class NtfyController {
    * of the poll response, leaving only the tombstone), while a delivered
    * one keeps its original `"message"` entry in the poll response (ntfy's
    * message history is append-only) but gains a `"message_delete"`
-   * tombstone alongside it â€” and, for a delivered message specifically,
+   * tombstone alongside it — and, for a delivered message specifically,
    * this is also what tells subscribed clients (verified: ntfy's Android
    * app and the web app in Chrome) to cancel the notification they showed.
    * Also verified idempotent: deleting an ID that no longer exists (or
@@ -510,7 +510,7 @@ export class NtfyController {
   /**
    * Builds an `obsidian://open` URL for the reminder's note. Verified that
    * ntfy echoes the JSON body's `click` field back verbatim (see
-   * `publish()`), so it must be fully URL-encoded here â€” ntfy itself does no
+   * `publish()`), so it must be fully URL-encoded here — ntfy itself does no
    * encoding of it.
    */
   private buildClickUrl(reminder: Reminder): string {

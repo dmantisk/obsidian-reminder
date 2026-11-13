@@ -48,6 +48,11 @@ export function scheduleUrl(
   return `${serverUrl}/${encodeURIComponent(topic)}/${encodeURIComponent(sequenceId)}`;
 }
 
+// ntfy's error bodies are small JSON objects, but a server URL pointing at
+// something that isn't ntfy at all can answer with a whole HTML page. Cap
+// what goes into the log/UI so one bad response can't flood either.
+const MAX_LOGGED_BODY_CHARS = 200;
+
 /**
  * Renders a failed response for a log line or the settings UI. The server's
  * own body is included because the status code alone doesn't say which of
@@ -56,7 +61,7 @@ export function scheduleUrl(
  * 404 both for "no such topic" and "that isn't an ntfy server".
  */
 export function describeFailure(response: NtfyResponse): string {
-  const body = response.text.trim().slice(0, 200);
+  const body = response.text.trim().slice(0, MAX_LOGGED_BODY_CHARS);
   return body.length === 0
     ? `status=${response.status}`
     : `status=${response.status} body=${body}`;

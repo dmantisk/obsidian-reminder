@@ -72,11 +72,13 @@ class ReminderListItemView extends ItemView {
       this.plugin.reminders.reminders,
       this.plugin.settings.notifications.reminderTime.value,
       {
-        yearMonthFormat: this.plugin.settings.yearMonthDisplayFormat.value,
-        monthDayFormat: this.plugin.settings.monthDayDisplayFormat.value,
+        yearMonthFormat:
+          this.plugin.settings.display.yearMonthDisplayFormat.value,
+        monthDayFormat:
+          this.plugin.settings.display.monthDayDisplayFormat.value,
         shortDateWithWeekdayFormat:
-          this.plugin.settings.shortDateWithWeekdayDisplayFormat.value,
-        timeFormat: this.plugin.settings.timeDisplayFormat.value,
+          this.plugin.settings.display.shortDateWithWeekdayDisplayFormat.value,
+        timeFormat: this.plugin.settings.display.timeDisplayFormat.value,
       },
     );
   }
@@ -99,10 +101,10 @@ export class ReminderListItemViewProxy {
   ) {
     // Automatically reflect display format changes in the Reminder List UI
     const formats = [
-      this.plugin.settings.yearMonthDisplayFormat,
-      this.plugin.settings.monthDayDisplayFormat,
-      this.plugin.settings.shortDateWithWeekdayDisplayFormat,
-      this.plugin.settings.timeDisplayFormat,
+      this.plugin.settings.display.yearMonthDisplayFormat,
+      this.plugin.settings.display.monthDayDisplayFormat,
+      this.plugin.settings.display.shortDateWithWeekdayDisplayFormat,
+      this.plugin.settings.display.timeDisplayFormat,
     ];
     formats.forEach((fmt) => {
       fmt.rawValue.onChanged(() => {

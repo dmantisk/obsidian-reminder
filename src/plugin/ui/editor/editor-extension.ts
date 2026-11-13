@@ -39,7 +39,7 @@ export function buildCodeMirrorPlugin(
           }
           const trigger = settings.editor.autoCompleteTrigger.value;
           const timeStep = settings.notifications.reminderTimeStep.value;
-          const weekStart = Number(settings.weekStart.value);
+          const weekStart = Number(settings.display.weekStart.value);
           if (trigger === text) {
             let result: Promise<DateTime>;
             if (Platform.isDesktopApp) {
