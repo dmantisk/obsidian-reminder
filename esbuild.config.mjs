@@ -1,5 +1,6 @@
 import process from "process";
 import fs from 'fs';
+import path from 'path';
 import esbuild from "esbuild";
 import { builtinModules as builtins } from 'node:module';
 import esbuildSvelte from "esbuild-svelte";
@@ -14,6 +15,10 @@ if you want to view the source, please visit the github repository of this plugi
 
 const watch = (process.argv[2] === 'watch');
 const prod = (process.argv[2] === 'production');
+
+// Output to dist/ for production, root for dev/watch
+const outDir = prod ? 'dist' : '.';
+const outFile = path.join(outDir, 'main.js');
 
 const ctx = await esbuild.context({
     banner: {
@@ -39,10 +44,9 @@ const ctx = await esbuild.context({
     format: 'cjs',
     target: 'es2018',
     logLevel: "info",
-    // minify: prod ? true : false,
     sourcemap: prod ? false : 'inline',
     treeShaking: true,
-    outfile: 'main.js',
+    outfile: outFile,
     minify: prod,
     plugins: [
         esbuildSvelte({
