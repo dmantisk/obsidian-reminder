@@ -4,6 +4,12 @@
     "EditorConfig.EditorConfig",
     "Orta.vscode-jest",
     "DavidAnson.vscode-markdownlint",
-    "svelte.svelte-vscode"
+    "svelte.svelte-vscode",
+    "dbaeumer.vscode-eslint",
+    "bradlc.vscode-tailwindcss",
+    "usernamehw.errorlens",
+    "streetsidesoftware.code-spell-checker",
+    "mikestead.dotenv",
+    "eamodio.gitlens"
   ]
 }

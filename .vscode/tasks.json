@@ -1,0 +1,103 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "obsidian-reminder: Install Dependencies",
+      "type": "shell",
+      "command": "mise exec -- npm install",
+      "group": "build",
+      "problemMatcher": [],
+      "detail": "Install npm dependencies using mise"
+    },
+    {
+      "label": "obsidian-reminder: Build (Production)",
+      "type": "shell",
+      "command": "mise run main:build",
+      "group": "build",
+      "problemMatcher": ["$tsc"],
+      "detail": "Production build with esbuild"
+    },
+    {
+      "label": "obsidian-reminder: Build (Watch)",
+      "type": "shell",
+      "command": "mise run dev",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": ["$tsc-watch"],
+      "detail": "Development watch build with esbuild"
+    },
+    {
+      "label": "obsidian-reminder: Run Tests",
+      "type": "shell",
+      "command": "mise run main:test",
+      "group": "test",
+      "problemMatcher": ["$jest"],
+      "detail": "Run full Jest test suite"
+    },
+    {
+      "label": "obsidian-reminder: Run Single Test File",
+      "type": "shell",
+      "command": "npx jest ${input:testFile}",
+      "group": "test",
+      "problemMatcher": ["$jest"],
+      "detail": "Run a single test file",
+      "inputs": [
+        {
+          "id": "testFile",
+          "type": "promptString",
+          "description": "Test file path (e.g., src/model/format/reminder-default.test.ts)",
+          "default": ""
+        }
+      ]
+    },
+    {
+      "label": "obsidian-reminder: Lint & Fix",
+      "type": "shell",
+      "command": "mise run main:lint:fix",
+      "group": "build",
+      "problemMatcher": ["$eslint-stylish"],
+      "detail": "Run eslint --fix + tsc --noEmit + svelte-check"
+    },
+    {
+      "label": "obsidian-reminder: Pre-commit Checks",
+      "type": "shell",
+      "command": "mise run pre-commit",
+      "group": "build",
+      "problemMatcher": ["$eslint-stylish", "$tsc", "$jest"],
+      "detail": "Run lint:fix then test"
+    },
+    {
+      "label": "obsidian-reminder: Type Check",
+      "type": "shell",
+      "command": "npx tsc --noEmit",
+      "group": "build",
+      "problemMatcher": ["$tsc"],
+      "detail": "TypeScript type checking only"
+    },
+    {
+      "label": "obsidian-reminder: Svelte Check",
+      "type": "shell",
+      "command": "npx svelte-check",
+      "group": "build",
+      "problemMatcher": [],
+      "detail": "Svelte type checking"
+    },
+    {
+      "label": "obsidian-reminder: Docs Dev Server",
+      "type": "shell",
+      "command": "mise run docs",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": [],
+      "detail": "Run VuePress docs dev server"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "testFile",
+      "type": "promptString",
+      "description": "Test file path",
+      "default": ""
+    }
+  ]
+}
