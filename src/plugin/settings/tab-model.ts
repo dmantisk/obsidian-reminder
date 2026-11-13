@@ -108,15 +108,6 @@ export class SettingTabModel {
     this.pages.forEach((page) => {
       page.groups.forEach((group) => {
         group.settings.forEach((setting) => {
-          if (setting === undefined) {
-            console.error(
-              "UNDEFINED SETTING in group:",
-              group.name,
-              "page:",
-              page.name,
-            );
-            console.error("Group settings:", group.settings);
-          }
           consumer(setting);
         });
       });

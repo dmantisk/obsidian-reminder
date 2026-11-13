@@ -31,8 +31,8 @@ async function convertDateTimeFormat(
       await vault.modify(file, content.getContent());
     }
   }
-  plugin.settings.dateFormat.rawValue.value = dateFormat;
-  plugin.settings.dateTimeFormat.rawValue.value = dateTimeFormat;
+  plugin.settings.editor.dateFormat.rawValue.value = dateFormat;
+  plugin.settings.editor.dateTimeFormat.rawValue.value = dateTimeFormat;
   if (updated > 0) {
     await plugin.fileSystem.reloadRemindersInAllFiles();
   }

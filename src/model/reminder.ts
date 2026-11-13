@@ -1,4 +1,4 @@
-﻿import { DateTime, Time } from "model/time";
+import { DateTime, Time } from "model/time";
 
 export class Reminder {
   // To avoid duplicate notification, set this flag true before notification and set false on notification done.

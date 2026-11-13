@@ -1,4 +1,4 @@
-﻿import { Reminder } from "model/reminder";
+import { Reminder } from "model/reminder";
 import type { TaskNotesAnchorType } from "model/reminder";
 import { DateTime } from "model/time";
 import { coerceScalar, hasValue, isRecord } from "./values";

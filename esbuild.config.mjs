@@ -16,9 +16,8 @@ if you want to view the source, please visit the github repository of this plugi
 const watch = (process.argv[2] === 'watch');
 const prod = (process.argv[2] === 'production');
 
-// Output to dist/ for production, root for dev/watch
-const outDir = prod ? 'dist' : '.';
-const outFile = path.join(outDir, 'main.js');
+// Output to repo root (release workflows expect main.js there)
+const outFile = path.join('.', 'main.js');
 
 const ctx = await esbuild.context({
     banner: {

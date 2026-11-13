@@ -146,7 +146,16 @@ const dependenciesConfig = {
  */
 /** @type {import("eslint").Linter.Config} */
 const settingsDropdownConfig = {
-  files: ['src/plugin/settings/index.ts'],
+  files: [
+    'src/plugin/settings/index.ts',
+    'src/plugin/settings/sections/editor.ts',
+    'src/plugin/settings/sections/display.ts',
+    'src/plugin/settings/sections/advanced.ts',
+    'src/plugin/settings/sections/notifications.ts',
+    'src/plugin/settings/sections/ntfy.ts',
+    'src/plugin/settings/sections/tasknotes.ts',
+    'src/plugin/settings/sections/reminder-formats.ts',
+  ],
   rules: {
     'obsidianmd/ui/sentence-case': 'off',
   },

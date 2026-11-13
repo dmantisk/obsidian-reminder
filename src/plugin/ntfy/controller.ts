@@ -65,7 +65,7 @@ export class NtfyController {
   // initial `start()` call, a debounced reminder change, and the 30-minute
   // interval can all land close together), that invocation just requests
   // one more round after the current one finishes, instead of running
-  // concurrently. Concurrent rounds could otherwise race â€” e.g. a delete
+  // concurrently. Concurrent rounds could otherwise race — e.g. a delete
   // from one round and a publish from another interleaving in an
   // unpredictable order for the same sequence ID.
   private syncing = false;

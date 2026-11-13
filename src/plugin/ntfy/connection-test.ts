@@ -55,13 +55,13 @@ function describeTestFailure(
  *
  * Deliberately not a method on `NtfyController`: what the user wants to test
  * is the values currently typed into the settings tab, which is exactly what
- * the caller passes in â€” not the controller's own view of the world, and not
+ * the caller passes in — not the controller's own view of the world, and not
  * something that should require a controller instance to reach.
  *
  * Publishing (rather than only polling) is the point of doing three requests:
  * ntfy's per-topic ACLs can grant read without write, so a read-only token
  * passes a poll-only check and then silently fails to publish a single
- * reminder. Nothing is delivered by the test itself â€” the message is
+ * reminder. Nothing is delivered by the test itself — the message is
  * scheduled a day out and deleted immediately (see
  * `CONNECTION_TEST_SEQUENCE_ID`).
  */

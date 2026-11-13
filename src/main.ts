@@ -58,9 +58,9 @@ export default class ReminderPlugin extends Plugin {
     this.settings.applyLanguage();
     this.reminders.reminderTime = this.settings.notifications.reminderTime;
     DATE_TIME_FORMATTER.setTimeFormat(
-      this.settings.dateFormat,
-      this.settings.dateTimeFormat,
-      this.settings.strictDateFormat,
+      this.settings.editor.dateFormat,
+      this.settings.editor.dateTimeFormat,
+      this.settings.editor.strictDateFormat,
     );
 
     this._ui = new ReminderPluginUI(this);
@@ -70,7 +70,7 @@ export default class ReminderPlugin extends Plugin {
       () => {
         this.ui.reload(true);
       },
-      () => this.settings.excludedPaths.value,
+      () => this.settings.advanced.excludedPaths.value,
       () => this.data.loaded,
     );
     this._notificationWorker = new NotificationWorker({
@@ -99,7 +99,8 @@ export default class ReminderPlugin extends Plugin {
         this.reminders.getExpiredReminders(
           this.settings.notifications.reminderTime.value,
         ),
-      checkIntervalSec: () => this.settings.reminderCheckIntervalSec.value,
+      checkIntervalSec: () =>
+        this.settings.advanced.reminderCheckIntervalSec.value,
       isNotificationEnabled: () =>
         this.settings.notifications.enableNotification.value,
       isNotificationPaused: () =>

@@ -4,7 +4,8 @@
 import { RawSerde } from "plugin/settings/serdes";
 import type { SettingModel } from "plugin/settings/setting-model";
 import { SettingTabModel } from "plugin/settings/tab-model";
-import { LANGUAGE_SETTINGS, languageLabel } from "i18n";
+import { LANGUAGE_SETTINGS, languageLabel, weekdayName } from "i18n";
+import type { LanguageSetting } from "i18n";
 
 export class DisplaySettings {
   language: SettingModel<string, string>;
@@ -33,15 +34,10 @@ export class DisplaySettings {
           "Automatic follows Obsidian's own UI language. Month and weekday names follow the selected language as well where the display formats use them.",
       )
       .dropdown("auto");
-    LANGUAGE_SETTINGS.forEach((option: string) => {
+    LANGUAGE_SETTINGS.forEach((option: LanguageSetting) => {
       languageBuilder.addOption(() => languageLabel(option), option);
     });
     this.language = languageBuilder.build(new RawSerde());
-    // Also fires while `PluginData` restores the persisted settings, so a
-    // saved value is applied before anything is rendered.
-    this.language.rawValue.onChanged(() => {
-      // applyLanguage is called by the plugin
-    });
 
     this.yearMonthDisplayFormat = this.settings
       .newSettingBuilder()
@@ -96,7 +92,7 @@ export class DisplaySettings {
     Array.from({ length: 7 }, (_, d) => {
       // Translated when the dropdown is rendered, so the day names follow the
       // selected language (moment's own locale data is not required).
-      weekStartBuilder.addOption(() => languageLabel(d), d.toString());
+      weekStartBuilder.addOption(() => weekdayName(d), d.toString());
     });
     this.weekStart = weekStartBuilder.build(new RawSerde());
   }
