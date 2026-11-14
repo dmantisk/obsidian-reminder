@@ -1,30 +1,40 @@
 <script lang="typescript">
   import { monthShortName, weekdayShortName } from "i18n";
   import { moment } from "model/moment";
-  import { createEventDispatcher, onMount } from "svelte";
+  import { createEventDispatcher, onMount, Snippet } from "svelte";
   import { Calendar } from "./calendar";
   import { TimedInputHandler } from "./timed-input-handler";
 
-  export let value: moment.Moment = moment();
-  export let weekStart: number = 0;
+  let {
+    value = moment(),
+    weekStart = 0,
+    footer,
+  }: {
+    value: moment.Moment;
+    weekStart: number;
+    footer?: Snippet<[]>;
+  } = $props();
+
   const dispatch = createEventDispatcher<{
     select: moment.Moment;
     focus: null;
     blur: null;
   }>();
-  $: calendar = new Calendar(
-    moment().startOf("day"),
-    value.startOf("day"),
-    weekStart,
+
+  let calendar = $derived(
+    new Calendar(moment().startOf("day"), value.startOf("day"), weekStart),
   );
   // Day names come from the plugin's own translations rather than from
   // moment, so the calendar header follows the language setting even when
   // moment has no locale data for it.
-  $: daysOfWeek = Array.from({ length: 7 }, (_, i) =>
-    weekdayShortName(calendar.weekStart + i),
+  let daysOfWeek = $derived(
+    Array.from({ length: 7 }, (_, i) =>
+      weekdayShortName(calendar.weekStart + i),
+    ),
   );
+
   let table: HTMLElement;
-  let slot: HTMLElement;
+  let footerElement: HTMLElement;
   let calendarEl: HTMLElement;
 
   export function focus() {
@@ -49,71 +59,66 @@
   }
   const timedInputHandler = new TimedInputHandler();
   function handleKeyDown(event: KeyboardEvent) {
+      let handled = false;
     if (event.key >= "0" && event.key <= "9") {
       event.preventDefault();
       let input = timedInputHandler.handle(event.key);
-      switch (input.length) {
-        case 1: {
-          const date = parseInt(input);
-          if (date > 0) {
-            value = value.set("date", date);
-          }
-          break;
+      if (input.length === 1) {
+        const date = parseInt(input);
+        if (date > 0) {
+          value = value.set("date", date);
         }
-        case 2:
-          if (input.startsWith("0")) {
-            input = input.slice(1);
-          }
-          value = value.set("date", parseInt(input));
-          break;
-        case 4:
-          {
-            let month = input.slice(0, 2);
-            let date = input.slice(2, 4);
-            if (month.startsWith("0")) {
-              month = month.slice(1);
-            }
-            if (date.startsWith("0")) {
-              date = date.slice(1);
-            }
-            value = value.set("month", parseInt(month) - 1);
-            value = value.set("date", parseInt(date));
-          }
-          break;
+      } else if (input.length === 2) {
+        if (input.startsWith("0")) {
+          input = input.slice(1);
+        }
+        value = value.set("date", parseInt(input));
+      } else if (input.length === 4) {
+        let month = input.slice(0, 2);
+        let date = input.slice(2, 4);
+        if (month.startsWith("0")) {
+          month = month.slice(1);
+        }
+        if (date.startsWith("0")) {
+          date = date.slice(1);
+        }
+        value = value.set("month", parseInt(month) - 1);
+        value = value.set("date", parseInt(date));
       }
-      return;
+        handled = true;
     }
-    timedInputHandler.clear();
-
-    if (event.key === "ArrowLeft" || (event.ctrlKey && event.key === "B")) {
-      value = value.add(-1, "day");
-      event.preventDefault();
-    } else if (
-      event.key === "ArrowRight" ||
-      (event.ctrlKey && event.key === "F")
-    ) {
-      value = value.add(1, "day");
-      event.preventDefault();
-    } else if (
-      event.key === "ArrowUp" ||
-      (event.ctrlKey && event.key === "P")
-    ) {
-      value = value.add(-7, "day");
-    } else if (
-      event.key === "ArrowDown" ||
-      (event.ctrlKey && event.key === "N")
-    ) {
-      value = value.add(7, "day");
-      event.preventDefault();
-    } else if (event.key === "Enter") {
-      dispatchSelect();
-      event.preventDefault();
+      if (!handled) {
+        timedInputHandler.clear();
+        if (event.key === "ArrowLeft" || (event.ctrlKey && event.key === "B")) {
+          value = value.add(-1, "day");
+          event.preventDefault();
+        } else if (
+          event.key === "ArrowRight" ||
+          (event.ctrlKey && event.key === "F")
+        ) {
+          value = value.add(1, "day");
+          event.preventDefault();
+        } else if (
+          event.key === "ArrowUp" ||
+          (event.ctrlKey && event.key === "P")
+        ) {
+          value = value.add(-7, "day");
+        } else if (
+          event.key === "ArrowDown" ||
+          (event.ctrlKey && event.key === "N")
+        ) {
+          value = value.add(7, "day");
+          event.preventDefault();
+        } else if (event.key === "Enter") {
+          dispatchSelect();
+          event.preventDefault();
+        }
     }
   }
 
   onMount(() => {
     // Force the footer slot to be the same width as the table
-    slot.style.width = table.clientWidth + "px";
+    footerElement.style.width = table.clientWidth + "px";
   });
 </script>
 
@@ -122,24 +127,25 @@
   tabindex="0"
   role="grid"
   bind:this={calendarEl}
-  on:focus={() => {
+  onfocus={() => {
     dispatch("focus");
   }}
-  on:blur={() => {
+  onblur={() => {
     dispatch("blur");
   }}
-  on:keydown={handleKeyDown}
+  onkeydown={handleKeyDown}
 >
   <div class="year-month">
-    <button tabindex="-1" class="month-nav" on:click={() => previousMonth()}
-      >&lt;</button
+    <button tabindex="-1" class="month-nav" onclick={() => previousMonth()}
+      ><</button
     >
     <span class="month"
       >{monthShortName(calendar.current.monthStart.month())}</span
     >
-    <span class="year">{calendar.current.monthStart.format("YYYY")}</span>
-    <button tabindex="-1" class="month-nav" on:click={() => nextMonth()}
-      >&gt;</button
+    <span class="year">{calendar.current.monthStart.format("YYYY")}</span
+    >
+    <button tabindex="-1" class="month-nav" onclick={() => nextMonth()}
+      >></button
     >
   </div>
   <table bind:this={table}>
@@ -162,8 +168,8 @@
                 class:other-month={!calendar.current.isThisMonth(day.date)}
                 class:is-holiday={day.isHoliday()}
                 class:is-past={day.date.isBefore(calendar.today)}
-                on:click={() => onClick(day.date)}
-                on:dblclick={() => onDoubleClick(day.date)}
+                onclick={() => onClick(day.date)}
+                ondblclick={() => onDoubleClick(day.date)}
               >
                 {day.date.format("D")}
               </button>
@@ -173,8 +179,8 @@
       {/each}
     </tbody>
   </table>
-  <div class="footer" bind:this={slot}>
-    <slot name="footer" />
+  <div class="footer" bind:this={footerElement}>
+    {@render footer?.()}
   </div>
 </div>
 

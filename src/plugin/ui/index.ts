@@ -3,14 +3,7 @@ import type ReminderPlugin from "main";
 import type { ReadOnlyReference } from "model/ref";
 import type { Reminder } from "model/reminder";
 import type { DateTime } from "model/time";
-import {
-  Editor,
-  MarkdownView,
-  Notice,
-  Platform,
-  TFile,
-  WorkspaceLeaf,
-} from "obsidian";
+import { Editor, MarkdownView, Notice, Platform, TFile } from "obsidian";
 import { refreshCommandNames, registerCommands } from "plugin/commands";
 import { showPauseDurationChooser } from "plugin/core/dnd";
 import { rebuildMarkdownViews } from "plugin/obsidian-hack/leaf";
@@ -19,7 +12,11 @@ import { VIEW_TYPE_REMINDER_LIST } from "./constants";
 import { DndStatusBar } from "./status-bar/dnd-status-bar";
 import { findLeafShowingFile } from "./find-leaf-showing-file";
 import { OverdueStatusBar } from "./status-bar/overdue-status-bar";
-import { ReminderListItemViewProxy } from "./views/reminder-list";
+import {
+  openReminderListView,
+  registerReminderListView,
+  revealReminderListView,
+} from "./views/reminder-list";
 import { AutoComplete } from "./editor/autocomplete";
 import type { AutoCompletableEditor } from "./editor/autocomplete";
 import { buildCodeMirrorPlugin } from "./editor/editor-extension";
@@ -38,25 +35,9 @@ export class ReminderPluginUI {
   private autoComplete: AutoComplete;
   private editDetector: EditDetector;
   private reminderNotifier: ReminderNotifier;
-  private viewProxy: ReminderListItemViewProxy;
   private dndStatusBar: DndStatusBar;
   private overdueStatusBar: OverdueStatusBar;
   constructor(private plugin: ReminderPlugin) {
-    this.viewProxy = new ReminderListItemViewProxy(
-      this.plugin,
-      // On select a reminder in the list
-      (reminder) => {
-        if (
-          !this.plugin.settings.notifications.openNoteOnReminderClick.value &&
-          reminder.muteNotification
-        ) {
-          this.showReminder(reminder);
-          return;
-        }
-        // Callback is synchronous; opening the file is fire-and-forget here.
-        this.handleReminderAction(reminder, "open");
-      },
-    );
     this.autoComplete = new AutoComplete(
       plugin.settings.editor.autoCompleteTrigger,
       plugin.settings.notifications.reminderTimeStep,
@@ -79,16 +60,25 @@ export class ReminderPluginUI {
     );
     this.dndStatusBar = new DndStatusBar(plugin);
     this.overdueStatusBar = new OverdueStatusBar(plugin);
+
+    // Register the reminder list view using DeferredView
+    registerReminderListView(this.plugin, (reminder) => {
+      if (
+        !this.plugin.settings.notifications.openNoteOnReminderClick.value &&
+        reminder.muteNotification
+      ) {
+        this.showReminder(reminder);
+        return;
+      }
+      // Callback is synchronous; opening the file is fire-and-forget here.
+      this.handleReminderAction(reminder, "open");
+    });
   }
 
   onload() {
     this.dndStatusBar.onload();
     this.overdueStatusBar.onload();
 
-    // Reminder List
-    this.plugin.registerView(VIEW_TYPE_REMINDER_LIST, (leaf: WorkspaceLeaf) => {
-      return this.viewProxy.createView(leaf);
-    });
     // Every label this plugin renders is translated when it is rendered, so a
     // language change has to re-render the surfaces that are already on
     // screen. Open popups/modals are short-lived and pick the new language up
@@ -150,7 +140,7 @@ export class ReminderPluginUI {
 
     // Open reminder list view. This callback will fire immediately if the
     // layout is ready, and will otherwise be enqueued.
-    this.viewProxy.openView();
+    openReminderListView(this.plugin);
   }
 
   onunload() {
@@ -183,12 +173,17 @@ export class ReminderPluginUI {
       this.plugin.app.workspace.updateOptions();
       rebuildMarkdownViews(this.plugin.app);
     }
-    this.viewProxy.invalidate();
-    this.viewProxy.reload(true);
+    // The reminder list view will re-render on language change via its own
+    // format change subscription (which fires when language changes the
+    // display formats). We also sync the notifier.
+    this.reminderNotifier.sync(
+      new Set(
+        this.plugin.reminders.reminders.map((reminder) => reminder.key()),
+      ),
+    );
   }
 
   invalidate() {
-    this.viewProxy.invalidate();
     this.overdueStatusBar.refresh();
     this.reminderNotifier.sync(
       new Set(
@@ -198,7 +193,6 @@ export class ReminderPluginUI {
   }
 
   reload(force: boolean = false) {
-    this.viewProxy.reload(force);
     this.overdueStatusBar.refresh();
   }
 
@@ -211,21 +205,7 @@ export class ReminderPluginUI {
   }
 
   async showReminderList() {
-    const workspace = this.plugin.app.workspace;
-    let leaf = workspace.getLeavesOfType(VIEW_TYPE_REMINDER_LIST)[0];
-    if (leaf == null) {
-      const rightLeaf = workspace.getRightLeaf(false);
-      if (rightLeaf == null) {
-        return;
-      }
-      await rightLeaf.setViewState({
-        type: VIEW_TYPE_REMINDER_LIST,
-      });
-      leaf = rightLeaf;
-    }
-    // Without revealing the leaf, the view stays hidden when the right
-    // sidebar is collapsed or another view is on top of it.
-    await workspace.revealLeaf(leaf);
+    await revealReminderListView(this.plugin);
   }
 
   private detachReminderList() {

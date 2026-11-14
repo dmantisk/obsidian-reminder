@@ -24,5 +24,13 @@
   "files.watcherExclude": {
     "**/node_modules/**": true,
     "**/.git/**": true
-  }
+  },
+  "jest.runMode": "on-demand",
+  "jest.jestCommandLine": "npm test --",
+  "jest.outputConfig": {
+    "revealOn": "error",
+    "revealWithFocus": "none",
+    "clearOnRun": "terminal"
+  },
+  "testing.automaticallyOpenTestResults": "neverOpen"
 }

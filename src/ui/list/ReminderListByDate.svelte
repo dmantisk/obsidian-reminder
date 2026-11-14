@@ -1,13 +1,16 @@
 <script lang="typescript">
   import { t } from "i18n";
+  import { MarkdownRenderer } from "obsidian";
+  import { afterUpdate } from "svelte";
   import type { DateTime } from "model/time";
   import type { Reminder } from "model/reminder";
-  import Markdown from "ui/common/Markdown.svelte";
 
   export let reminders: Array<Reminder>;
   export let onOpenReminder: (reminder: Reminder) => void = () => {};
   export let timeToString = (time: DateTime) => time.format("HH:mm");
   export let generateLink: (reminder: Reminder) => string = () => "";
+
+  let titleElements: Map<number, HTMLElement> = new Map();
 
   function displayTitle(reminder: Reminder): string {
     return reminder.source === "tasknotes"
@@ -20,6 +23,26 @@
       reminder.source === "tasknotes" ? `${t("TaskNotes")} - ` : "";
     return `[${reminder.effectiveTime.toString()}] ${displayTitle(reminder)} - ${source}${reminder.getFileName()}`;
   }
+
+  afterUpdate(() => {
+    titleElements.forEach((el, index) => {
+      const reminder = reminders[index];
+      if (reminder) {
+        el.empty();
+        MarkdownRenderer.renderMarkdown(
+          displayTitle(reminder),
+          el,
+          reminder.file,
+          window.app.plugins.plugins["obsidian-reminder-plugin"],
+        );
+        el.childNodes.forEach((n) => {
+          if (n instanceof HTMLElement) {
+            n.style.display = "inline";
+          }
+        });
+      }
+    });
+  });
 </script>
 
 <div class="reminder-group">
@@ -57,10 +80,8 @@
               >
             {/if}
             <span class="reminder-title">
-              <Markdown
-                markdown={displayTitle(reminder)}
-                sourcePath={reminder.file}
-              />
+              <span class="reminder-markdown" bind:this={titleElements[i]}
+              ></span>
             </span>
             {#if reminder.source === "markdown"}
               <span class="reminder-file">

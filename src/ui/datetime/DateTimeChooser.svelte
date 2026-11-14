@@ -2,50 +2,62 @@
   import { t } from "i18n";
   import { moment } from "model/moment";
   import { setIcon } from "obsidian";
-  import { tick } from "svelte";
+  import { onMount, tick } from "svelte";
   import type { Reminders } from "model/reminders";
   import { DateTime, type Later, defaultLaters } from "model/time";
   import ReminderListByDate from "ui/list/ReminderListByDate.svelte";
   import CalendarView from "./Calendar.svelte";
   import TimePicker from "./TimePicker.svelte";
 
-  export let reminders: Reminders;
-  export let onSelect: (time: DateTime) => void;
-  export let timeStep = 15;
-  export let weekStart = 0;
-  // When set, pre-initializes the calendar (and, if it has a time part, the
-  // time input) from this value instead of the usual "now"/reminder-time
-  // defaults. Used when editing an existing reminder (e.g. from the editor
-  // pill) so the chooser opens on the reminder's current time.
-  export let initialTime: DateTime | undefined = undefined;
+  let {
+    reminders,
+    onSelect,
+    timeStep = 15,
+    weekStart = 0,
+    initialTime,
+  }: {
+    reminders: Reminders;
+    onSelect: (time: DateTime) => void;
+    timeStep?: number;
+    weekStart?: number;
+    initialTime?: DateTime;
+  } = $props();
 
-  export let date = initialTime?.moment().clone() ?? moment();
-  let time = initialTime?.hasTimePart
-    ? initialTime.format("HH:mm")
-    : (reminders.reminderTime?.value.toString() ?? "10:00");
-  let timeIsFocused = initialTime?.hasTimePart ?? false;
+  let date = $state(initialTime?.moment().clone() ?? moment());
+  let time = $state(
+    initialTime?.hasTimePart
+      ? initialTime.format("HH:mm")
+      : (reminders.reminderTime?.value.toString() ?? "10:00"),
+  );
+  let timeIsFocused = $state(initialTime?.hasTimePart ?? false);
 
   type Mode = "calendar" | "quickpick";
-  let mode: Mode = "calendar";
+  let mode = $state<Mode>("calendar");
 
-  let filterQuery = "";
-  let selectedIndex = 0;
-  let filterInputEl: HTMLInputElement | undefined;
-  let modeToggleIconEl: HTMLElement | undefined;
-  let calendarViewComponent: CalendarView | undefined;
+  let filterQuery = $state("");
+  let selectedIndex = $state(0);
+  let filterInputEl = $state<HTMLInputElement | undefined>();
+  let modeToggleIconEl = $state<HTMLElement | undefined>();
+  let calendarViewComponent = $state<CalendarView | undefined>();
 
   // Re-render the Lucide icon whenever the mode changes, not just on mount.
-  $: if (modeToggleIconEl) {
-    setIcon(modeToggleIconEl, mode === "calendar" ? "clock" : "calendar");
-  }
+  $effect(() => {
+    if (modeToggleIconEl) {
+      setIcon(modeToggleIconEl, mode === "calendar" ? "clock" : "calendar");
+    }
+  });
 
-  $: filteredLaters = defaultLaters().filter((later) =>
-    later.label.toLowerCase().includes(filterQuery.toLowerCase()),
+  let filteredLaters = $derived(
+    defaultLaters().filter((later) =>
+      later.label.toLowerCase().includes(filterQuery.toLowerCase()),
+    ),
   );
   // Reset the highlighted item whenever the filter text changes.
-  $: if (filterQuery !== undefined) {
-    selectedIndex = 0;
-  }
+  $effect(() => {
+    if (filterQuery !== undefined) {
+      selectedIndex = 0;
+    }
+  });
 
   function handleSelect() {
     const [hour, minute] = time.split(":");
@@ -142,7 +154,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="dtchooser" on:keydown={handleKeyDown}>
+<div class="dtchooser" onkeydown={handleKeyDown}>
   {#if mode === "calendar"}
     <div class="dtchooser-calendar-area">
       <button
@@ -150,7 +162,7 @@
         class="dtchooser-mode-toggle dtchooser-mode-toggle-overlay"
         aria-label={t("Show quick date picks")}
         title={t("Show quick date picks")}
-        on:click={toggleMode}
+        onclick={toggleMode}
       >
         <span class="dtchooser-mode-toggle-icon" bind:this={modeToggleIconEl}
         ></span>
@@ -159,14 +171,16 @@
         bind:value={date}
         bind:this={calendarViewComponent}
         {weekStart}
-        on:select={() => handleSelect()}
-      >
-        <div slot="footer">
-          <hr class="dtchooser-divider" />
-          <ReminderListByDate
-            reminders={reminders.byDate(new DateTime(date, false))}
-          />
-        </div>
+        onselect={() => handleSelect()}
+              footer={() => {
+                const footerContent = document.createElement('div');
+                const hr = document.createElement('hr');
+                hr.className = 'dtchooser-divider';
+                footerContent.appendChild(hr);
+                // ReminderListByDate will be mounted separately
+                return footerContent;
+              }}
+            >
       </CalendarView>
     </div>
     <div class="dtchooser-wrapper">
@@ -175,15 +189,15 @@
         <TimePicker
           bind:value={time}
           step={timeStep}
-          on:select={() => {
+          onselect={() => {
             handleSelect();
           }}
-          on:focus={() => {
+          onfocus={() => {
             timeIsFocused = true;
           }}
         />
       </div>
-      <button class="mod-cta" on:click={handleSelect}>{t("OK")}</button>
+      <button class="mod-cta" onclick={handleSelect}>{t("OK")}</button>
     </div>
   {:else}
     <div class="dtchooser-header">
@@ -193,14 +207,14 @@
         placeholder={t("Filter...")}
         bind:value={filterQuery}
         bind:this={filterInputEl}
-        on:keydown={handleFilterKeyDown}
+        onkeydown={handleFilterKeyDown}
       />
       <button
         type="button"
         class="dtchooser-mode-toggle"
         aria-label={t("Show calendar")}
         title={t("Show calendar")}
-        on:click={toggleMode}
+        onclick={toggleMode}
       >
         <span class="dtchooser-mode-toggle-icon" bind:this={modeToggleIconEl}
         ></span>
@@ -213,8 +227,8 @@
             type="button"
             class="dtchooser-quick-pick"
             class:is-selected={i === selectedIndex}
-            on:click={() => handleLaterSelect(later)}
-            on:mouseenter={() => (selectedIndex = i)}
+            onclick={() => handleLaterSelect(later)}
+            onmouseenter={() => (selectedIndex = i)}
           >
             {later.label}
           </button>

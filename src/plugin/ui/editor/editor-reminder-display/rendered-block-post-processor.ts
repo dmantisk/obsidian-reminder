@@ -1,4 +1,5 @@
 import { t } from "i18n";
+import { setIcon } from "obsidian";
 import type ReminderPlugin from "main";
 import type { Reminder } from "model/reminder";
 import { EditorView } from "@codemirror/view";
@@ -10,7 +11,6 @@ import { MarkdownRenderChild } from "obsidian";
 import { openChooserAndApplyEdit } from "./edit-reminder";
 import type { ReminderLocation } from "./edit-reminder";
 import { decorateRenderedTaskItem } from "./rendered-pill";
-import ReminderPillComponent from "./ReminderPill.svelte";
 
 /**
  * Marks the container Obsidian wraps around a block it renders inside Live
@@ -18,17 +18,14 @@ import ReminderPillComponent from "./ReminderPill.svelte";
  */
 const RENDERED_BLOCK_SELECTOR = ".cm-embed-block";
 
-/** Keeps the pill's Svelte component alive exactly as long as the rendered block. */
+/** Keeps the pill's DOM alive exactly as long as the rendered block. */
 class ReminderPillRenderChild extends MarkdownRenderChild {
-  constructor(
-    containerEl: HTMLElement,
-    private readonly component: ReminderPillComponent,
-  ) {
+  constructor(containerEl: HTMLElement) {
     super(containerEl);
   }
 
   override onunload(): void {
-    this.component.$destroy();
+    // No Svelte component to destroy
   }
 }
 
@@ -71,24 +68,40 @@ function buildPill(
   ctx: MarkdownPostProcessorContext,
   reminder: Reminder,
 ): HTMLElement {
-  const container = createSpan();
-  const component = new ReminderPillComponent({
-    target: container,
-    props: {
-      label: `⏰ ${reminder.time.toString()}`,
-      title: t("Reminder: {title}", { title: reminder.title }),
-    },
+  const container = createSpan({ cls: "reminder-pill" });
+  container.setAttribute("role", "button");
+  container.setAttribute("tabindex", "0");
+  container.setAttribute(
+    "title",
+    t("Reminder: {title}", { title: reminder.title }),
+  );
+
+  const icon = container.createSpan({ cls: "icon" });
+  setIcon(icon, "clock");
+  container.createSpan({ cls: "text", text: reminder.time.toString() });
+
+  const activate = () => {
+    void activatePill(plugin, container);
+  };
+
+  container.addEventListener("click", activate);
+  container.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.stopPropagation();
+      activate();
+    }
   });
-  component.$on("activate", () => {
-    // Fire-and-forget: this is a user-initiated action from a DOM event
-    // handler, there's nothing to await it against.
-    void activate(plugin, container);
+  container.addEventListener("mousedown", (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
   });
-  ctx.addChild(new ReminderPillRenderChild(container, component));
+
+  ctx.addChild(new ReminderPillRenderChild(container));
   return container;
 }
 
-async function activate(
+async function activatePill(
   plugin: ReminderPlugin,
   container: HTMLElement,
 ): Promise<void> {

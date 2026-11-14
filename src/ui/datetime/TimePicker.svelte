@@ -1,11 +1,9 @@
-<script>
+<script lang="typescript">
   import { createEventDispatcher } from "svelte";
   import { TimedInputHandler } from "./timed-input-handler";
-  export let value = "00:00";
-  // step in minutes
-  export let step = 15;
 
-  const dispatch = createEventDispatcher();
+  let { value = "00:00", step = 15 }: { value: string; step: number } = $props();
+  const dispatch = createEventDispatcher<{ select: string; focus: void; blur: void }>();
 
   function handleSelect() {
     dispatch("select", value);
@@ -19,8 +17,8 @@
     dispatch("blur");
   }
 
-  function generateOptions() {
-    let options = [];
+  function generateOptions(): string[] {
+    const options: string[] = [];
     for (let i = 0; i < 60 * 24; i += step) {
       const hour = Math.floor(i / 60);
       const minute = i % 60;
@@ -34,20 +32,19 @@
   const options = generateOptions();
 
   const timedInputHandler = new TimedInputHandler();
-  function handleKeyDown(event) {
+  function handleKeyDown(event: KeyboardEvent) {
     if (event.key >= "0" && event.key <= "9") {
       event.preventDefault();
       const input = timedInputHandler.handle(event.key);
       switch (input.length) {
-        case 1:
-          {
-            const hour = input.padStart(2, "0");
-            const candidates = options.filter((o) => o.startsWith(hour));
-            if (candidates.length > 1) {
-              value = candidates[0];
-            }
+        case 1: {
+          const hour = input.padStart(2, "0");
+          const candidates = options.filter((o) => o.startsWith(hour));
+          if (candidates.length > 1) {
+            value = candidates[0];
           }
           break;
+        }
         case 2: {
           const prefix = input + ":";
           const candidates = options.filter((o) => o.startsWith(prefix));
@@ -56,14 +53,13 @@
           }
           break;
         }
-        case 4:
-          {
-            const time = input.slice(0, 2) + ":" + input.slice(2, 4);
-            if (options.includes(time)) {
-              value = time;
-            }
+        case 4: {
+          const time = input.slice(0, 2) + ":" + input.slice(2, 4);
+          if (options.includes(time)) {
+            value = time;
           }
           break;
+        }
       }
       return;
     }
@@ -80,10 +76,10 @@
 <select
   class="time-picker"
   bind:value
-  on:dblclick={handleSelect}
-  on:focus={handleFocus}
-  on:blur={handleBlur}
-  on:keydown={handleKeyDown}
+  ondblclick={handleSelect}
+  onfocus={handleFocus}
+  onblur={handleBlur}
+  onkeydown={handleKeyDown}
 >
   {#each options as option (option)}
     <option value={option}>{option}</option>

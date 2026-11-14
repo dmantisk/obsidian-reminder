@@ -1,22 +1,10 @@
 import { t } from "i18n";
+import { setIcon } from "obsidian";
 import type ReminderPlugin from "main";
 import { EditorView, WidgetType } from "@codemirror/view";
 import { openChooserAndApplyEdit } from "./edit-reminder";
 import type { ReminderLocation } from "./edit-reminder";
 import type { ReminderPillSpan } from "./types";
-import ReminderPillComponent from "./ReminderPill.svelte";
-
-/**
- * The Svelte component mounted into each pill's DOM, keyed by that DOM.
- *
- * CodeMirror can call `toDOM()` on the same widget instance more than once
- * (e.g. when a line is redrawn as the viewport moves), and hands the DOM to
- * a different, `eq()`-equal widget instance when decorations are rebuilt.
- * Keeping the component on the widget instance would make `destroy()` tear
- * down whichever component was mounted last — possibly one that's still on
- * screen, leaving an empty pill — so it's tracked per DOM element instead.
- */
-const mountedComponents = new WeakMap<HTMLElement, ReminderPillComponent>();
 
 /** Renders a single reminder's time text as a clickable "⏰ <time>" pill. */
 export class ReminderPillWidget extends WidgetType {
@@ -52,26 +40,40 @@ export class ReminderPillWidget extends WidgetType {
   }
 
   override toDOM(view: EditorView): HTMLElement {
-    const container = createSpan();
-    const component = new ReminderPillComponent({
-      target: container,
-      props: {
-        label: `⏰ ${this.span.reminder.time.toString()}`,
-        title: this.title,
-      },
+    const container = createSpan({ cls: "reminder-pill" });
+    container.setAttribute("role", "button");
+    container.setAttribute("tabindex", "0");
+    container.setAttribute("title", this.title);
+
+    const icon = container.createSpan({ cls: "icon" });
+    setIcon(icon, "clock");
+    container.createSpan({
+      cls: "text",
+      text: this.span.reminder.time.toString(),
     });
-    component.$on("activate", () => {
-      // Fire-and-forget: this is a user-initiated action from a DOM event
-      // handler, there's nothing to await it against.
+
+    const activate = () => {
       void this.activate(view, container);
+    };
+
+    container.addEventListener("click", activate);
+    container.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        e.stopPropagation();
+        activate();
+      }
     });
-    mountedComponents.set(container, component);
+    container.addEventListener("mousedown", (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
     return container;
   }
 
   override destroy(dom: HTMLElement): void {
-    mountedComponents.get(dom)?.$destroy();
-    mountedComponents.delete(dom);
+    // No Svelte component to destroy
   }
 
   override ignoreEvent(): boolean {

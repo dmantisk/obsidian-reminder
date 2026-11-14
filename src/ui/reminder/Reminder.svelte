@@ -1,52 +1,59 @@
 <script lang="typescript">
   import { onMount, tick } from "svelte";
   import { t } from "i18n";
+  import { MarkdownRenderer } from "obsidian";
   import type { Reminder } from "model/reminder";
   import type { DateTime, Later } from "model/time";
-  import IconText from "ui/common/IconText.svelte";
-  import Markdown from "ui/common/Markdown.svelte";
+  import { createIconText } from "ui/common/icon-text";
 
-  export let reminder: Reminder;
-  export let onRemindMeLater: (time: DateTime) => void;
-  export let onDone: () => void;
-  export let onOpenFile: () => void;
-  export let onMute: () => void;
-  export let onPauseAllNotifications: () => void;
-  export let onMuteAll: () => void;
-  // "modal": Obsidian's centered dialog (default, unchanged behavior).
-  // "toast": a non-focus-stealing corner card; see the toast-specific
-  // branches below (onMount, svelte:window, close button, styling).
-  export let variant: "modal" | "toast" = "modal";
-  // Only used by the toast variant's close (x) button.
-  export let onClose: (() => void) | undefined = undefined;
-  // Whether the Done button should be auto-focused when the popup opens.
-  // Off by default so a stray Enter/Space keypress right after the popup
-  // appears doesn't accidentally complete a reminder the user hasn't read.
-  export let focusDone: boolean = false;
-  // Whether keyboard mnemonics are active for this instance. Only relevant
-  // to the toast variant: multiple toasts can be shown at once, and each one
-  // mounts its own `svelte:window` keydown handler, so if more than one had
-  // shortcuts enabled a single keypress would trigger all of them at once.
-  // `ReminderToastManager` keeps this true for only the most recently shown
-  // toast. The modal variant never passes this prop, so it stays `true` and
-  // its behavior is unchanged.
-  export let shortcutsEnabled: boolean = true;
-  // Do not set initial value so that svelte can render the placeholder `Remind Me Later`.
-  let selectedIndex: number;
-  export let laters: Array<Later> = [];
-  let doneButton: HTMLButtonElement;
-  let laterSelect: HTMLSelectElement;
-  let containerEl: HTMLElement;
+  let {
+    reminder,
+    onRemindMeLater,
+    onDone,
+    onOpenFile,
+    onMute,
+    onPauseAllNotifications,
+    onMuteAll,
+    variant = "modal",
+    onClose,
+    focusDone = false,
+    shortcutsEnabled = true,
+    laters = [],
+  }: {
+    reminder: Reminder;
+    onRemindMeLater: (time: DateTime) => void;
+    onDone: () => void;
+    onOpenFile: () => void;
+    onMute: () => void;
+    onPauseAllNotifications: () => void;
+    onMuteAll: () => void;
+    variant?: "modal" | "toast";
+    onClose?: () => void;
+    focusDone?: boolean;
+    shortcutsEnabled?: boolean;
+    laters?: Array<Later>;
+  } = $props();
+
+  let selectedIndex = $state<number>();
+  let doneButton = $state<HTMLButtonElement>();
+  let laterSelect = $state<HTMLSelectElement>();
+  let containerEl = $state<HTMLElement>();
+  let titleEl = $state<HTMLElement>();
+  let taskTitleEl = $state<HTMLElement>();
+  let taskDescEl = $state<HTMLElement>();
+  let fileIconEl = $state<HTMLElement>();
+  let doneIconEl = $state<HTMLElement>();
+  let muteIconEl = $state<HTMLElement>();
 
   // Translated labels. The keyboard mnemonics below refer to the English
   // letter (Alt+D / Alt+M / Alt+S), so the underlined letter is only shown
   // when the label still starts with it; a translation into a language
   // without that chord renders the plain label.
-  const isTaskNotes = reminder.source === "tasknotes";
-  const doneLabel = t(isTaskNotes ? "Open" : "Done");
-  const muteLabel = t("Mute");
-  const showDoneMnemonic = doneLabel.toUpperCase().startsWith("D");
-  const showMuteMnemonic = muteLabel.toUpperCase().startsWith("M");
+  let isTaskNotes = $derived(reminder.source === "tasknotes");
+  let doneLabel = $derived(t(isTaskNotes ? "Open" : "Done"));
+  let muteLabel = $derived(t("Mute"));
+  let showDoneMnemonic = $derived(doneLabel.toUpperCase().startsWith("D"));
+  let showMuteMnemonic = $derived(muteLabel.toUpperCase().startsWith("M"));
 
   function remindMeLater() {
     const selected = laters[selectedIndex];
@@ -114,6 +121,68 @@
       containerEl.focus();
     }
   });
+
+  // Render markdown content and icons after each update
+    $effect(() => {
+    // Render title markdown
+    if (titleEl) {
+      titleEl.empty();
+      MarkdownRenderer.renderMarkdown(
+        reminder.title,
+        titleEl,
+        reminder.file,
+        window.app.plugins.plugins["obsidian-reminder-plugin"],
+      );
+      titleEl.childNodes.forEach((n) => {
+        if (n instanceof HTMLElement) {
+          n.style.display = "inline";
+        }
+      });
+    }
+
+    // Render tasknotes title markdown
+    if (taskTitleEl && reminder.tasknotes?.taskTitle) {
+      taskTitleEl.empty();
+      MarkdownRenderer.renderMarkdown(
+        reminder.tasknotes.taskTitle,
+        taskTitleEl,
+        reminder.file,
+        window.app.plugins.plugins["obsidian-reminder-plugin"],
+      );
+      taskTitleEl.childNodes.forEach((n) => {
+        if (n instanceof HTMLElement) {
+          n.style.display = "inline";
+        }
+      });
+    }
+
+    // Render tasknotes description markdown
+    if (taskDescEl && reminder.tasknotes?.description) {
+      taskDescEl.empty();
+      MarkdownRenderer.renderMarkdown(
+        reminder.tasknotes.description,
+        taskDescEl,
+        reminder.file,
+        window.app.plugins.plugins["obsidian-reminder-plugin"],
+      );
+      taskDescEl.childNodes.forEach((n) => {
+        if (n instanceof HTMLElement) {
+          n.style.display = "inline";
+        }
+      });
+    }
+
+    // Create icon-text elements
+    if (fileIconEl) {
+      createIconText(fileIconEl, "link", reminder.file);
+    }
+    if (doneIconEl) {
+      createIconText(doneIconEl, "check-small", "");
+    }
+    if (muteIconEl) {
+      createIconText(muteIconEl, "minus-with-circle", "");
+    }
+  });
 </script>
 
 <!-- Capture phase so the shortcuts run before Obsidian's own keymap/hotkey
@@ -121,13 +190,13 @@ handlers (e.g. Ctrl+O would otherwise also trigger the quick switcher).
 `<svelte:window>` can't be placed inside an `{#if}` block, so disabled
 instances (older toasts; see `shortcutsEnabled`) are excluded inside
 `handleKeydown` itself instead. -->
-<svelte:window on:keydown|capture={handleKeydown} />
+<svelte:window onkeydown|capture={handleKeydown} />
 
 <main bind:this={containerEl} tabindex="-1" class:toast={variant === "toast"}>
   {#if variant === "toast"}
     <button
       class="reminder-toast-close"
-      on:click={onClose}
+      onclick={onClose}
       aria-label={t("Close")}
     >
       ×
@@ -136,17 +205,11 @@ instances (older toasts; see `shortcutsEnabled`) are excluded inside
   {#if reminder.source === "tasknotes" && reminder.tasknotes}
     <div class="tasknotes-details">
       <h3 class="reminder-title" aria-label={reminder.tasknotes.taskTitle}>
-        <Markdown
-          markdown={reminder.tasknotes.taskTitle}
-          sourcePath={reminder.file}
-        />
+        <span class="reminder-markdown" bind:this={taskTitleEl}></span>
       </h3>
       {#if reminder.tasknotes.description}
         <div class="tasknotes-description">
-          <Markdown
-            markdown={reminder.tasknotes.description}
-            sourcePath={reminder.file}
-          />
+          <span class="reminder-markdown" bind:this={taskDescEl}></span>
         </div>
       {/if}
       <div class="tasknotes-anchor">
@@ -161,37 +224,37 @@ instances (older toasts; see `shortcutsEnabled`) are excluded inside
     </div>
   {:else}
     <h3 class="reminder-title" aria-label={reminder.title}>
-      <Markdown markdown={reminder.title} sourcePath={reminder.file} />
+      <span class="reminder-markdown" bind:this={titleEl}></span>
     </h3>
   {/if}
   <button
     class="reminder-file"
-    on:click={onOpenFile}
+    onclick={onOpenFile}
     aria-label={`${reminder.file} (Alt+O / Ctrl+O)`}
     aria-keyshortcuts="Alt+O Control+O"
   >
-    <IconText icon="link" text={reminder.file} />
+    <span class="icon-text" bind:this={fileIconEl}></span>
   </button>
   <div class="reminder-actions">
     <button
       class="mod-cta"
-      on:click={onDone}
+      onclick={onDone}
       bind:this={doneButton}
       title="Alt+D / Ctrl+D"
       aria-keyshortcuts="Alt+D Control+D"
     >
-      <IconText icon="check-small" /><span
+      <span class="icon-text" bind:this={doneIconEl}></span><span
         >{#if showDoneMnemonic}<span class="mnemonic">D</span>{doneLabel.slice(
             1,
           )}{:else}{doneLabel}{/if}</span
       >
     </button>
     <button
-      on:click={onMute}
+      onclick={onMute}
       title="Alt+M / Ctrl+M"
       aria-keyshortcuts="Alt+M Control+M"
     >
-      <IconText icon="minus-with-circle" /><span
+      <span class="icon-text" bind:this={muteIconEl}></span><span
         >{#if showMuteMnemonic}<span class="mnemonic">M</span>{muteLabel.slice(
             1,
           )}{:else}{muteLabel}{/if}</span
@@ -201,7 +264,7 @@ instances (older toasts; see `shortcutsEnabled`) are excluded inside
       class="dropdown later-select"
       bind:value={selectedIndex}
       bind:this={laterSelect}
-      on:change={remindMeLater}
+      onchange={remindMeLater}
       title="Alt+S / Ctrl+S"
       aria-keyshortcuts="Alt+S Control+S"
     >
@@ -217,7 +280,7 @@ instances (older toasts; see `shortcutsEnabled`) are excluded inside
     <div class="reminder-secondary-actions">
       <button
         class="reminder-footer-action"
-        on:click={onPauseAllNotifications}
+        onclick={onPauseAllNotifications}
         title={t(
           "Pause all notifications for a chosen duration. Reminders are not muted: anything still overdue notifies you again after the pause ends.",
         )}
@@ -226,7 +289,7 @@ instances (older toasts; see `shortcutsEnabled`) are excluded inside
       </button>
       <button
         class="reminder-footer-action"
-        on:click={onMuteAll}
+        onclick={onMuteAll}
         title={t(
           "Mute every currently overdue reminder. Muted reminders stay silent (even across restarts) until you snooze them or change their date.",
         )}
